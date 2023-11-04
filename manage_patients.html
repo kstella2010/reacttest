@@ -41,9 +41,9 @@
   </div>
 
   <!-- Display area for general information -->
-<div class="container mt-4">
+<div class="container-general-info">
   <div id="generalInfoDisplay" style="display: none;">
-      <h3>General Information</h3>
+    <h3 class="container-header">General Information</h3>
       <div class="table-responsive">
           <table class="table table-bordered">
               <tbody></tbody>
@@ -55,7 +55,7 @@
 
   <!-- New Incident (initially hidden) -->
   <div class="container mt-4">
-    <button id="newIncidentButton" class="btn btn-primary" style="display: none;">New Incident</button>
+    <button id="newIncidentButton" class="btn btn-outlined" style="display: none;">New Incident</button>
   </div>
   <!-- Form for entering incident information (initially hidden) -->
 <div class="container mt-4" style="display: none;" id="incidentFormContainer">
@@ -73,8 +73,8 @@
     </form>
   </div>
  <!-- Container for incident frames (initially hidden) -->
- <div class="container mt-4" style="display: none;" id="incidentListContainer">
-  <h3>Incidents</h3>
+ <div class="container container-incident" style="display: none;" id="incidentListContainer">
+  <h3 class="container-header">Incidents</h3>
   <div id="incidentCards" class="row">
       <!-- Incident cards will be dynamically inserted here by the JavaScript -->
   </div>
@@ -103,6 +103,98 @@
     padding-left: 80px;
     padding-right: 80px;
   }
+  .card-header-custom {
+      font-weight: bold;
+      font-size: 1.2rem;
+      padding-left: 20px;
+      padding-top: 10px;
+      border: none; 
+      background-color: #FEF9FF;
+      font-stretch: expanded;
+
+  }
+  .card-incident{
+    /*box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);*/
+    background-color: #FEF9FF;
+    border: 1px solid #D15EEE; /* Border color */
+    border-radius: 10;
+    height:400px
+    
+  }
+.frame-body-custom {
+  padding-left: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.frame-header-custom {
+  padding-left: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-weight: 550;
+}
+.container-incident{
+  border: grey ;
+  stroke: gray;
+  background-color: #FEF9FF;
+  border-radius: 20;
+  padding-left: 20px;
+  padding-top: 10px;
+  margin-top: 20px;
+
+}
+.container-header {
+    color: #878787; /* Text color */
+    font-size: 1.5rem; /* Font size */
+    font-weight: 500; /* Font weight */
+    padding-bottom: 15px;
+    padding-top: 30px;
+}
+/* Primary Button */
+.btn-outlined {
+    color: #D15EEE; /* Text color */
+    font-size: 1.1rem;
+    background-color: transparent; /* Background color */
+    border: 1px solid #D15EEE; /* Border color */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+/* Hover state */
+.btn-outlined:hover {
+    color: #7d1db9; /* Text color on hover */
+    background-color: transparent; /* Background color on hover */
+    border: 1px solid #7d1db9; /* Border color on hover */
+}
+.container-general-info{
+  background-color: #FEF9FF;
+  margin-top: 1.5rem;
+  margin-left: 7rem;
+  margin-right: 7rem;
+  padding-top: 0px;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 20px;
+
+}
+.btn-upload {
+    color: #D15EEE; /* Text color */
+    background-color: transparent; /* Background color */
+    border: 1px solid #D15EEE; /* Border color */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+/* Hover state */
+.btn-upload:hover {
+    color: #7d1db9; /* Text color on hover */
+    background-color: transparent; /* Background color on hover */
+    border: 1px solid #7d1db9; /* Border color on hover */
+}
+
+
+
 </style>
 
 <script>
@@ -215,28 +307,28 @@
 
         // Create a card with title
         incidentCard.innerHTML = `
-              <div class="card">
-                  <div class="card-header">
+              <div class="card card-incident">
+                  <div class="card-header card-header-custom">
                       ${incidentFolder}
                   </div>
-                  <div class="card-body">
-                      <div class="card">
-                          <div class="card-header">
+                  <div class="frame-body frame-body-custom">
+                      <div class="frame">
+                          <div class="frame-header frame-header-custom">
                               Files and Reports
                           </div>
-                          <div class="card-body">
+                          <div class="frame-body frame-body-custom">
                               <ul id="filesList-${incidentFolder}">
                                   <!-- Files will be dynamically inserted here by the JavaScript -->
                               </ul>
                               <input type="file" id="fileInput-${incidentFolder}" style="display: none;">
-                              <button onclick="document.getElementById('fileInput-${incidentFolder}').click()">Upload File</button>
+                              <button onclick="document.getElementById('fileInput-${incidentFolder}').click()" class="btn-upload">Upload File</button>
                           </div>
                       </div>
-                      <div class="card mt-3">
-                          <div class="card-header">
+                      <div class="frame">
+                          <div class="frame-header frame-header-custom">
                               Treatment
                           </div>
-                          <div class="card-body">
+                          <div class="frame-body frame-body-custom">
                               <!-- You can add treatment-related content here -->
                           </div>
                       </div>
