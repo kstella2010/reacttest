@@ -1,0 +1,390 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Patient Information Form</title>
+    <!-- Include Bootstrap CSS and JavaScript -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Jaldi&display=swap" rel="stylesheet">
+
+  </head>
+  <body>
+    <nav class="nav-bar fixed-bottom bg-light">
+    <div class="container">
+      <ul class="nav justify-content-center nav-bar">
+        <li class="nav-item">
+          <a class="nav-link" href="manage_patients.html">
+            <i class="fas fa-users fa-2x"></i> <!-- Font Awesome users icon -->
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="add_patient.html">
+            <i class="fas fa-user-plus fa-2x"></i> <!-- Font Awesome user-plus icon -->
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="run_ml.html">
+            <i class="fas fa-cogs fa-2x"></i> <!-- Font Awesome cogs icon -->
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav> 
+  <!-- Patient dropdown -->
+  <div class="container mt-4">
+    <label for="patientDropdown">Select a Patient:</label>
+    <!-- Input for searching patients -->
+    <input type="text" id="searchInput" class="form-control" placeholder="Search for a patient">
+    <select id="patientDropdown" class="form-select">
+      <option value="" disabled selected>Select a patient</option>
+    </select>
+  </div>
+
+  <!-- Display area for general information -->
+<div class="container mt-4">
+  <div id="generalInfoDisplay" style="display: none;">
+      <h3>General Information</h3>
+      <div class="table-responsive">
+          <table class="table table-bordered">
+              <tbody></tbody>
+          </table>
+      </div>
+  </div>
+</div>
+
+
+  <!-- New Incident (initially hidden) -->
+  <div class="container mt-4">
+    <button id="newIncidentButton" class="btn btn-primary" style="display: none;">New Incident</button>
+  </div>
+  <!-- Form for entering incident information (initially hidden) -->
+<div class="container mt-4" style="display: none;" id="incidentFormContainer">
+    <form id="incidentForm">
+      <h3>New Incident</h3>
+      <div class="mb-3">
+        <label for="incidentName" class="form-label">Incident Name:</label>
+        <input type="text" id="incidentName" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label for="incidentDescription" class="form-label">Incident Description:</label>
+        <textarea id="incidentDescription" class="form-control" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+  </div>
+ <!-- Container for incident frames (initially hidden) -->
+ <div class="container mt-4" style="display: none;" id="incidentListContainer">
+  <h3>Incidents</h3>
+  <div id="incidentCards" class="row">
+      <!-- Incident cards will be dynamically inserted here by the JavaScript -->
+  </div>
+  
+</body> 
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.0/css/all.min.css">
+<style>
+  body {
+            font-family: 'Jaldi', sans-serif; /* Apply Jaldi font to everything */
+        }
+  /* Custom CSS for navigation */
+  .nav-bar {
+    display: flex;
+    justify-content: space-between; /* Spread items */
+  }
+
+  .nav-link {
+    text-decoration: none;
+    color: #000; /* Text color */
+  }
+
+  .nav-item {
+    text-align: center;
+    padding-left: 80px;
+    padding-right: 80px;
+  }
+</style>
+
+<script>
+    const { ipcRenderer } = require('electron');
+    const fs = require('fs');
+    const path = require('path');
+    const excel = require('exceljs');
+  
+    const searchInput = document.getElementById('searchInput');
+    const patientDropdown = document.getElementById('patientDropdown');
+    const patientInfoDisplay = document.getElementById('patientInfoDisplay');
+  
+    
+
+    // Function to search for patients based on user input
+    // Function to search for patients based on user input
+    function searchPatients() {
+    const searchTerm = searchInput.value.trim();
+    if (!searchTerm) {
+        patientDropdown.innerHTML = '<option value="" disabled selected>Select a patient</option>';
+        return;
+    }
+
+    // Clear previous search results
+    patientDropdown.innerHTML = '';
+
+    // Read the patient_data directory to find matching folders
+    const patientDataPath = path.join(__dirname, 'patient_data');
+    fs.readdir(patientDataPath, (err, files) => {
+        if (err) {
+        console.error(err);
+        return;
+        }
+
+        // Filter folders that match the search term (phone or pet name)
+        const matchingPatients = files.filter((folderName) => {
+        // Check if the search term partially or fully matches the folder name
+        if (folderName.toLowerCase().includes(searchTerm.toLowerCase())) {
+            return true;
+        }
+        });
+
+        // Populate the patient dropdown with matching patients
+        if (matchingPatients.length === 0) {
+        patientDropdown.innerHTML = '<option value="" disabled selected>No matching patients</option>';
+        } else {
+        matchingPatients.forEach((patientFolder) => {
+            const option = document.createElement('option');
+            option.value = patientFolder;
+            option.text = patientFolder;
+            patientDropdown.appendChild(option);
+        });
+        }
+    });
+    }
+
+    // Event listener for search input (input event)
+    searchInput.addEventListener('input', searchPatients);
+  
+    // Event listener for patient selection in the dropdown
+    patientDropdown.addEventListener('change', () => {
+        const selectedPatient = patientDropdown.value;
+        if (selectedPatient) {
+            // Display patient information for the selected patient
+            displayPatientInfo(selectedPatient);
+            // Show the "New Incident" button
+            document.getElementById('newIncidentButton').style.display = 'block';
+
+            // Modify the URL of the "New Incident" button to include the selected patient
+            const newIncidentButton = document.getElementById('newIncidentButton');
+            newIncidentButton.href = `new_incident.html?patient=${encodeURIComponent(selectedPatient)}`;
+
+            // Dynamically load and display incidents for the selected patient
+            loadIncidents(selectedPatient);
+        } else {
+            // Hide the "New Incident" button if no patient is selected
+            document.getElementById('newIncidentButton').style.display = 'none';
+            // Hide the incident list container
+            document.getElementById('incidentListContainer').style.display = 'none';
+            // Hide the general information display when no patient is selected
+            document.getElementById('generalInfoDisplay').style.display = 'none';
+        }
+    });
+
+    // Function to load and display incidents for the selected patient
+    function loadIncidents(selectedPatient) {
+    // Assuming you have a directory structure for patient incidents
+    const patientIncidentPath = path.join(__dirname, 'patient_data', selectedPatient);
+
+    // Read the patient's incident directories
+    fs.readdir(patientIncidentPath, (err, incidentFolders) => {
+        if (err) {
+        console.error(err);
+        return;
+        }
+
+        const incidentCards = document.getElementById('incidentCards');
+        incidentCards.innerHTML = ''; // Clear previous incident frames
+
+        // Filter out the 'patient_info.xlsx' folder
+        incidentFolders = incidentFolders.filter((folderName) => folderName !== 'patient_info.xlsx');
+        incidentFolders = incidentFolders.filter((folderName) => folderName !== 'patient_mal_data.xlsx');
+        incidentFolders = incidentFolders.filter((folderName) => folderName !== 'patient_ml_data.xlsx');
+
+        incidentFolders.forEach((incidentFolder) => {
+
+        // Create an incident card for each incident
+        const incidentCard = document.createElement('div');
+        incidentCard.classList.add('col-md-6', 'mb-4');
+
+        // Create a card with title
+        incidentCard.innerHTML = `
+              <div class="card">
+                  <div class="card-header">
+                      ${incidentFolder}
+                  </div>
+                  <div class="card-body">
+                      <div class="card">
+                          <div class="card-header">
+                              Files and Reports
+                          </div>
+                          <div class="card-body">
+                              <ul id="filesList-${incidentFolder}">
+                                  <!-- Files will be dynamically inserted here by the JavaScript -->
+                              </ul>
+                              <input type="file" id="fileInput-${incidentFolder}" style="display: none;">
+                              <button onclick="document.getElementById('fileInput-${incidentFolder}').click()">Upload File</button>
+                          </div>
+                      </div>
+                      <div class="card mt-3">
+                          <div class="card-header">
+                              Treatment
+                          </div>
+                          <div class="card-body">
+                              <!-- You can add treatment-related content here -->
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          `;
+         // Append the incident card to the list of incident cards
+         incidentCards.appendChild(incidentCard);
+
+         const filesList = document.getElementById(`filesList-${incidentFolder}`);
+        // Retrieve the list of files in the "Files" directory
+        const filesFolderPath = path.join(__dirname, 'patient_data', selectedPatient, incidentFolder, 'Files');
+        fs.readdir(filesFolderPath, (err, files) => {
+            if (err) {
+                console.error(err);
+            } else {
+                if (files.length > 0) {
+                    files.forEach((file) => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = file;
+                        filesList.appendChild(listItem);
+                    });
+                } else {
+                    filesList.innerHTML += '<li>No files in the "Files" directory.</li>';
+                }
+            }
+        });
+
+        // Add a file input element for uploading files
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.id = `fileInput-${incidentFolder}`;
+        fileInput.style.display = 'none'; // Hide the file input
+        //filesAndReportsFrame.appendChild(fileInput);
+
+        // Add a button to trigger the file input
+        const uploadButton = document.createElement('button');
+        uploadButton.textContent = 'Upload File';
+        uploadButton.addEventListener('click', () => {
+        document.getElementById(`fileInput-${incidentFolder}`).click();
+        });
+        //filesAndReportsFrame.appendChild(uploadButton);
+
+        // Event listener for file input change
+        fileInput.addEventListener('change', (event) => {
+            const selectedFile = event.target.files[0];
+            
+            if (selectedFile) {
+                const incidentFolderPath = path.join(__dirname, 'patient_data', selectedPatient, incidentFolder); // Use incidentFolder directly
+                const filesFolderPath = path.join(incidentFolderPath, 'Files');
+                const newFilePath = path.join(filesFolderPath, selectedFile.name);
+
+                fs.copyFile(selectedFile.path, newFilePath, (err) => {
+                    if (err) {
+                        console.error(err);
+                        alert('Failed to upload the file. Please try again.');
+                    } else {
+                        alert('File uploaded successfully.');
+                        // You can update the UI to reflect the uploaded file, if needed
+                    }
+                });
+            }
+        });
+
+        // Show the incident list container
+       }); document.getElementById('incidentListContainer').style.display = 'block';
+    });
+    }
+
+
+     // Add a click event listener to the "New Incident" button
+    newIncidentButton.addEventListener('click', () => {
+    // Show the incident form and hide the button
+    document.getElementById('incidentFormContainer').style.display = 'block';
+    newIncidentButton.style.display = 'none';
+    });
+
+
+    // Event listener for the incident form submission
+    const incidentForm = document.getElementById('incidentForm');
+    incidentForm.addEventListener('submit', (event) => {
+    event.preventDefault(); // Prevent the default form submission behavior
+
+    // Collect incident details
+    const incidentName = document.getElementById('incidentName').value;
+    const incidentDescription = document.getElementById('incidentDescription').value;
+
+    // Create the directory structure for the incident
+    const selectedPatient = patientDropdown.value;
+    const incidentFolderPath = path.join(__dirname, 'patient_data', selectedPatient, incidentName);
+
+    try {
+        // Create directories for 'Files' and 'Treatment' within the incident folder
+        fs.mkdirSync(path.join(incidentFolderPath, 'Files'), { recursive: true });
+        fs.mkdirSync(path.join(incidentFolderPath, 'Treatment'), { recursive: true });
+        // Save incident information to a file or database if needed
+    } catch (err) {
+        console.error(err);
+    }
+
+    // Reset the form and hide it
+    incidentForm.reset();
+    document.getElementById('incidentFormContainer').style.display = 'none';
+    newIncidentButton.style.display = 'block';
+
+    });
+
+    // Function to display general information for a selected patient
+    function displayPatientInfo(selectedPatient) {
+        const generalInfoDisplay = document.getElementById('generalInfoDisplay');
+        // Clear the previous patient information
+        const tableBody = generalInfoDisplay.querySelector('tbody');
+        tableBody.innerHTML = '';
+
+        // Construct the path to the patient_info.xlsx file
+        const patientFolderPath = path.join(__dirname, 'patient_data', selectedPatient);
+        const patientInfoPath = path.join(patientFolderPath, 'patient_info.xlsx');
+
+        const workbook = new excel.Workbook();
+        const worksheetName = 'Patient Info';
+
+        try {
+            // Read the patient_info.xlsx file
+            workbook.xlsx.readFile(patientInfoPath).then(() => {
+                const worksheet = workbook.getWorksheet(worksheetName);
+
+                // Iterate through rows in the worksheet and display the information in a table
+                worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+                    if (row.values.length > 0) {
+                        const rowData = row.values;
+                        const tableRow = document.createElement('tr');
+                        rowData.forEach((cellData) => {
+                            const tableCell = document.createElement('td');
+                            tableCell.textContent = cellData;
+                            tableRow.appendChild(tableCell);
+                        });
+                        tableBody.appendChild(tableRow);
+                    }
+                });
+
+                // Show the general information display
+                generalInfoDisplay.style.display = 'block';
+            });
+        } catch (err) {
+            console.error(err);
+            // Display an error message if reading general information fails
+            generalInfoDisplay.innerHTML = 'Failed to read general information';
+        }
+    }
+
+  </script>

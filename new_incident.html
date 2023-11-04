@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>New Incident</title>
+    <!-- Include Bootstrap CSS and JavaScript -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  </head>
+  <body>
+    <!-- Create a form for entering incident information -->
+    <div class="container mt-4">
+      <h3>New Incident</h3>
+      <form id="incidentForm">
+        <div class="mb-3">
+            <label for="incidentPatient" class="form-label">Patient Name:</label>
+            <input type="text" id="incidentPatient" class="form-control" disabled>
+          </div>         
+        <div class="mb-3">
+          <label for="incidentName" class="form-label">Incident Name:</label>
+          <input type="text" id="incidentName" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="incidentDescription" class="form-label">Incident Description:</label>
+          <textarea id="incidentDescription" class="form-control" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+  </body>
+</html>
+
+<script>
+
+const urlParams = new URLSearchParams(window.location.search);
+const selectedPatient = urlParams.get('patient');
+
+// Pre-fill the incident form with the patient's name
+if (selectedPatient) {
+  document.getElementById('incidentPatient').value = decodeURIComponent(selectedPatient);
+}
+// Event listener for the incident form submission
+const incidentForm = document.getElementById('incidentForm');
+incidentForm.addEventListener('submit', (event) => {
+  event.preventDefault(); // Prevent the default form submission behavior
+
+  const incidentName = document.getElementById('incidentName').value;
+  const incidentDescription = document.getElementById('incidentDescription').value;
+
+  // Use the remote module to access the main process's fs
+  const fs = require('electron').remote.require('fs');
+  const path = require('electron').remote.require('path');
+
+  // Create the directory structure for the incident
+  const incidentFolderPath = path.join(__dirname, 'patient_data', selectedPatient, incidentName);
+
+  try {
+    // Create directories for 'Files' and 'Treatment' within the incident folder
+    fs.mkdirSync(path.join(incidentFolderPath, 'Files'), { recursive: true });
+    fs.mkdirSync(path.join(incidentFolderPath, 'Treatment'), { recursive: true });
+    // Save incident information to a file or database if needed
+  } catch (err) {
+    console.error(err);
+  }
+  
+  // Redirect the user back to the patient information page
+  window.location.href = 'manage_patients.html';
+});
+
+</script>
